@@ -1,0 +1,69 @@
+# IDAWS — TEKNOFEST 2026 İDA otonomi simülasyonu
+#
+# Kullanım (arkadaşların için):
+#     ./run-docker.sh              → hazır imajı çeker ve başlatır
+#     docker compose up            → aynısı, elle
+#
+# Geliştirme (kaynak değiştirip yeniden derlemek için):
+#     docker compose --profile dev up --build idaws-dev
+
+x-common: &common
+  # Gazebo, SITL ve ROS aynı konteynerde; keşif konteyner içinde kalır.
+  init: false                      # tini imajın ENTRYPOINT'inde zaten var
+  stop_grace_period: 30s           # mp4 kayıtlarının temiz kapanmasına süre tanı
+  environment: &common-env
+    DISPLAY: ${DISPLAY:-:0}
+    QT_X11_NO_MITSHM: "1"
+    XDG_RUNTIME_DIR: /tmp/runtime-idaws
+    # Kayitlar host'ta root'a ait olmasin diye konteyner host kullanicisina gecer
+    HOST_UID: ${HOST_UID:-1000}
+    HOST_GID: ${HOST_GID:-1000}
+    # NVIDIA kartlarda GLX/EGL'in konteynerde çalışması için
+    NVIDIA_VISIBLE_DEVICES: all
+    NVIDIA_DRIVER_CAPABILITIES: all
+  volumes: &common-volumes
+    - /tmp/.X11-unix:/tmp/.X11-unix:rw
+    - ${XAUTHORITY:-/dev/null}:/tmp/.docker.xauth:ro
+    # Kayıtlar ve log'lar host'ta kalsın — şartname teslimleri buradan alınır.
+    # Yol compose dosyasının dizinine göre çözülür, o yüzden ".." gerekiyor.
+    - ../recordings:/idaws/logs
+  devices:
+    # Donanım hızlandırmalı render (kamera sensörü bunsuz çok yavaş)
+    - /dev/dri:/dev/dri
+  cap_add:
+    # entrypoint'in konteyner içi loopback'te multicast açması için;
+    # verilmezse gz keşfi eth0 üzerinden yürür, yine çalışır.
+    - NET_ADMIN
+
+services:
+  # ── Arkadaşların kullanacağı servis: hazır imaj, derleme yok ──
+  idaws:
+    <<: *common
+    image: ${IDAWS_IMAGE:-ghcr.io/salihucucu/idaws:latest}
+    container_name: idaws-sim
+    environment:
+      <<: *common-env
+    volumes: *common-volumes
+    ports:
+      - "5000:5000"                # web kontrol paneli
+    # Varsayılan komut imajdan gelir (start-sim.sh)
+
+  # ── Geliştirme servisi: yerel kaynaktan derler, src'yi canlı bağlar ──
+  idaws-dev:
+    <<: *common
+    profiles: ["dev"]
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    image: ${IDAWS_IMAGE:-ghcr.io/salihucucu/idaws:latest}
+    container_name: idaws-sim-dev
+    environment:
+      <<: *common-env
+    volumes:
+      - /tmp/.X11-unix:/tmp/.X11-unix:rw
+      - ${XAUTHORITY:-/dev/null}:/tmp/.docker.xauth:ro
+      - ../recordings:/idaws/logs
+      # Kaynağı canlı bağla: düzenle → konteynerde `colcon build` → yeniden başlat
+      - ../src:/idaws/src:rw
+    ports:
+      - "5000:5000"

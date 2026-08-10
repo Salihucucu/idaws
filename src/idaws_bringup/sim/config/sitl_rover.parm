@@ -1,0 +1,10 @@
+# ArduRover SITL parameters for IDAWS USV (skid-steer, 2 motors)
+FRAME_CLASS      2
+SERVO1_FUNCTION  73
+SERVO3_FUNCTION  74
+ARMING_CHECK     0
+FS_THR_ENABLE    0
+MOT_SLEWRATE     100
+MOT_THR_MAX      100
+MOT_THR_MIN      0
+WP_SPEED         1.0

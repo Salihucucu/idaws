@@ -1,0 +1,23 @@
+# Docker derleme bağlamını küçük tut — build/install/log yeniden üretilir,
+# tlog/PDF/mp4 gibi büyük dosyaların imajda işi yok.
+build/
+install/
+log/
+logs/
+recordings/
+**/__pycache__/
+**/*.pyc
+
+# Simülasyon çıktıları ve uçuş kayıtları
+*.tlog
+*.tlog.raw
+*.BIN
+*.bin
+*.mp4
+mav.parm
+
+# Şartname ve dokümanlar (imaja gerek yok)
+*.pdf
+
+.git/
+.github/

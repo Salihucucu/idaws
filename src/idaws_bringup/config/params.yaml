@@ -1,0 +1,95 @@
+# ─────────────────────────────────────────────
+# IDAWS Parametre Dosyası
+# ─────────────────────────────────────────────
+
+pymavlink_controller_node:
+  ros__parameters:
+    serial_port: "/dev/ttyACM0"
+    baud_rate: 115200
+    system_id: 1
+    component_id: 1
+
+yolo_vision_node:
+  ros__parameters:
+    use_yolo: false
+    model_path: "/home/jetson/models/best.pt"
+    camera_index: 0
+    confidence_threshold: 0.45
+    record_dir: "/home/jetson/idaws_recordings"
+    input_width: 640
+    input_height: 480
+    # video_source: "device" (cv2.VideoCapture(camera_index)),
+    # "gstreamer" (udpsrc port=gstreamer_port ! ... RTP/H264) veya
+    # "ros" (kamera ROS'a köprülenmişse sensor_msgs/Image topic'i)
+    video_source: "device"
+    camera_topic: "/camera/image_raw"
+    annotated_topic: "vision/image_annotated"
+    publish_annotated: true
+    gstreamer_port: 5400
+
+mission_manager_node:
+  ros__parameters:
+    json_serial_port: "/dev/ttyUSB0"
+    json_baud_rate: 57600
+    parkur1_timeout_sec: 300.0
+    parkur2_timeout_sec: 300.0
+
+collision_avoidance_node:
+  ros__parameters:
+    # safety_radius / danger_radius TABAN degerlerdir; uzerine anlik durma
+    # mesafesi (v*reaction_time + v^2/(2*max_decel)) eklenir.
+    safety_radius: 2.0
+    danger_radius: 1.0
+    reaction_time_sec: 1.0
+    max_decel: 1.5
+    max_safety_radius: 10.0      # LiDAR menzili 12 m — altinda kalmali
+    # Hizi sensorun gorebildigi mesafeyle sinirla (durma mesafesi <= yaricap tavani)
+    limit_speed_to_sensor_range: true
+    speed_topic: "telemetry/groundspeed"
+    max_speed: 1.0
+    num_sectors: 72
+    goal_weight: 1.0
+    obstacle_weight: 2.0
+    camera_fov_deg: 60.0
+
+mission_logger_node:
+  ros__parameters:
+    log_dir: "/home/jetson/idaws_logs"
+
+lidar_logger_node:
+  ros__parameters:
+    scan_topic: "/scan"
+    log_dir: "/home/jetson/idaws_logs"
+    record_hz: 1.0          # şartname: en az 1 Hz
+    record_video: true
+    render_size_px: 600
+    # Kümeleme eşiği: gap_base + gap_factor * menzil (m)
+    cluster_gap_base: 0.35
+    cluster_gap_factor: 0.06
+    cluster_min_points: 3
+    max_cluster_range: 12.0
+    # Lokal cost map (araç merkezli, base_link)
+    map_size_m: 24.0
+    map_resolution: 0.1
+    inflation_radius: 0.8
+
+web_ui_node:
+  ros__parameters:
+    web_port: 5000
+    # video_source: "ros"       → sensor_msgs/Image topic (yolo_vision_node'un çizimli
+    #                             akışı varsa o, yoksa ham kamera)
+    #               "gstreamer" → sahadaki alıcı script'iyle aynı pipeline:
+    #                             udpsrc port=gstreamer_port ! RTP/H264
+    #               "device"    → cv2.VideoCapture(camera_index)
+    video_source: "gstreamer"
+    camera_topic: "/camera/image_raw"
+    annotated_topic: "vision/image_annotated"
+    gstreamer_port: 5400
+    camera_index: 0
+    jpeg_quality: 70
+    stream_fps: 15.0
+    # LiDAR kuş bakışı görselleştirme
+    scan_topic: "/scan"
+    lidar_max_points: 360
+    safety_radius: 2.0
+    danger_radius: 1.0

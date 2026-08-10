@@ -75,12 +75,27 @@ export HOST_GID="$(id -g)"
 
 mkdir -p recordings
 
+IMAGE="${IDAWS_IMAGE:-ghcr.io/salihucucu/idaws:latest}"
+
 case "$CMD" in
   up)
-      grn "IDAWS baslatiliyor (hazir imaj)..."
-      "${COMPOSE[@]}" up --pull always idaws ;;
+      # Once hazir imaji dene. Registry'de imaj yoksa ya da erisilemezse
+      # sessizce yerel derlemeye dus — arkadaslarin "image not found" hatasiyla
+      # karsilasip takilmasin. Derlenmis imaj zaten yereldeyse tekrar cekilmez.
+      if docker image inspect "$IMAGE" >/dev/null 2>&1; then
+          grn "Yerel imaj bulundu: $IMAGE"
+          "${COMPOSE[@]}" up idaws
+      elif grn "Hazir imaj araniyor: $IMAGE" && docker pull "$IMAGE" >/dev/null 2>&1; then
+          grn "Imaj indirildi."
+          "${COMPOSE[@]}" up idaws
+      else
+          ylw "Registry'de hazir imaj yok — yerel kaynaktan derlenecek."
+          ylw "Ilk sefer 40-50 dakika surer, sonraki calistirmalar aninda acilir."
+          echo
+          "${COMPOSE[@]}" --profile dev up --build idaws-dev
+      fi ;;
   build)
-      grn "IDAWS yerel kaynaktan derleniyor (ilk sefer 30-45 dk surer)..."
+      grn "IDAWS yerel kaynaktan derleniyor (ilk sefer 40-50 dk surer)..."
       "${COMPOSE[@]}" --profile dev up --build idaws-dev ;;
   *)
       red "Bilinmeyen komut: $CMD"

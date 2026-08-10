@@ -23,3 +23,6 @@ mav.parm
 .vscode/
 .idea/
 *.swp
+
+# Claude Code yerel ayarlari
+.claude/

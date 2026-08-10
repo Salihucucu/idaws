@@ -27,7 +27,7 @@ sudo usermod -aG docker "$USER"   # sonra oturumu kapatıp aç
 ## Çalıştırma
 
 ```bash
-git clone <repo-adresi> idaws
+git clone https://github.com/Salihucucu/idaws.git
 cd idaws
 ./run-docker.sh
 ```

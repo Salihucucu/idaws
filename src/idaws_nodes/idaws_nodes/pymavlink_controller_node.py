@@ -249,19 +249,33 @@ class PymavlinkControllerNode(Node):
     # ───────────────────── Komut Gönderme (ROS → MAVLink) ─────────────────────
 
     def _cb_velocity(self, twist: Twist):
-        """RC_CHANNELS_OVERRIDE ile hız komutu gönderir."""
-        # Throttle: linear.x → kanal 3 (1100-1900)
-        # Yaw:      angular.z → kanal 4 (1100-1900)
+        """RC_CHANNELS_OVERRIDE ile hız komutu gönderir.
+
+        DÜMEN KANAL 1'DEN GİDER, KANAL 4'TEN DEĞİL. ArduPilot Rover dümen
+        girdisini `RCMAP_ROLL` kanalından (varsayılan ch1) okur; ch4 (RCMAP_YAW)
+        Rover'da hiç kullanılmaz. Dümen ch4'e yazıldığında otopilot komutu
+        sessizce yok sayar — hata da vermez — ve araç yalnızca düz gider.
+        SITL'de ölçüldü: ch4=1700 gönderildiğinde iki itki de 1500'de kalıyor,
+        ch1=1700 gönderildiğinde sol 1680 / sağ 1320 oluyor.
+
+        İşaret: `Twist.angular.z` ROS geleneğinde CCW pozitiftir, yani +z SOLA
+        dönüştür (`collision_avoidance_node` hedef açısını atan2(y, x) ile
+        üretirken bu geleneği kullanıyor). ArduPilot'ta dümen kanalı 1500'ün
+        ÜSTÜNDE aracı SAĞA döndürdüğü için işaret ters çevriliyor.
+        """
+        # Gaz:   linear.x  → RCMAP_THROTTLE kanalı (ch3), 1100-1900
+        # Dümen: angular.z → RCMAP_ROLL kanalı (ch1), 1100-1900
         throttle = int(self._clamp(twist.linear.x, -1.0, 1.0) * 400 + 1500)
-        yaw = int(self._clamp(twist.angular.z, -1.0, 1.0) * 400 + 1500)
+        steer = int(self._clamp(-twist.angular.z, -1.0, 1.0) * 400 + 1500)
 
         with self._lock:
             self._conn.mav.rc_channels_override_send(
                 self._conn.target_system,
                 self._conn.target_component,
-                0, 0,        # ch1, ch2
-                throttle,    # ch3 — throttle
-                yaw,         # ch4 — yaw/rudder
+                steer,       # ch1 — dümen (RCMAP_ROLL)
+                0,           # ch2
+                throttle,    # ch3 — gaz (RCMAP_THROTTLE)
+                0,           # ch4 — Rover'da kullanılmıyor
                 0, 0, 0, 0,  # ch5-ch8
             )
 

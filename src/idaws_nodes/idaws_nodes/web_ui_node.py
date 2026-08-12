@@ -149,9 +149,13 @@ WEB_TEMPLATE = """
       <div></div>
       <button class="btn-dir" data-lin="1"  data-ang="0">&#9650;<br>Ileri</button>
       <div></div>
-      <button class="btn-dir" data-lin="0"  data-ang="-1">&#9664;<br>Sol</button>
+      <!-- Isaret ROS geleneginde: +angular.z = CCW = SOLA. collision_avoidance
+           hedef acisini atan2(y, x) ile uretirken ayni gelenegi kullaniyor;
+           panel ters isaret kullanirsa manuel kumanda ile otonomi birbirinin
+           aynasi olur ve dumen yonu hangi kaynagin surdugune gore degisir. -->
+      <button class="btn-dir" data-lin="0"  data-ang="1">&#9664;<br>Sol</button>
       <button class="btn-estop" onclick="stopManual()">DUR</button>
-      <button class="btn-dir" data-lin="0"  data-ang="1">&#9654;<br>Sag</button>
+      <button class="btn-dir" data-lin="0"  data-ang="-1">&#9654;<br>Sag</button>
       <div></div>
       <button class="btn-dir" data-lin="-1" data-ang="0">&#9660;<br>Geri</button>
       <div></div>
@@ -473,7 +477,7 @@ document.querySelectorAll('.btn-dir').forEach(btn => {
 
 const KEYS = {
   'w': [1, 0], 'arrowup': [1, 0], 's': [-1, 0], 'arrowdown': [-1, 0],
-  'a': [0, -1], 'arrowleft': [0, -1], 'd': [0, 1], 'arrowright': [0, 1],
+  'a': [0, 1], 'arrowleft': [0, 1], 'd': [0, -1], 'arrowright': [0, -1],
 };
 let heldKey = null;
 document.addEventListener('keydown', (e) => {
